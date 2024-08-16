@@ -1,5 +1,9 @@
 package main
 
-func main() {
+import (
+	"github.com/AEKDA/aereq/internal/tui"
+)
 
+func main() {
+	tui.New()
 }
