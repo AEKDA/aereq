@@ -13,6 +13,8 @@ import (
 type analyzer struct{}
 
 func (s *analyzer) Do(ctx context.Context, input string, query string) (string, error) {
+	ctx = logger.WithName(ctx, "jsonanalyzer")
+
 	queryJq, err := gojq.Parse(query)
 	if err != nil {
 		return "", errors.Wrap(err, "gojq.Parse")
@@ -36,7 +38,7 @@ func (s *analyzer) Do(ctx context.Context, input string, query string) (string, 
 			if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
 				break
 			}
-			logger.Errorf("Ошибка", err.Error())
+			logger.Errorf(ctx, "Ошибка", err.Error())
 			return "", err
 		}
 		err := json.NewEncoder(&out).Encode(v)

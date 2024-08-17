@@ -15,13 +15,13 @@ var (
 )
 
 func init() {
-	SetLogger(New(defaultLevel))
+	SetLogger(NewStdOut(defaultLevel))
 }
 
 // New создает экземпляр *zap.SugaredLogger cо стандартным json выводом.
 // Если уровень логгирования не передан - будет использоваться уровень
 // по умолчанию (zap.ErrorLevel)
-func New(level zapcore.LevelEnabler, options ...zap.Option) *zap.SugaredLogger {
+func NewStdOut(level zapcore.LevelEnabler, options ...zap.Option) *zap.SugaredLogger {
 	return NewWithSink(level, os.Stdout, options...)
 }
 
@@ -33,26 +33,34 @@ func NewWithSink(level zapcore.LevelEnabler, sink io.Writer, options ...zap.Opti
 		level = defaultLevel
 	}
 
-	core := newZapCore(level, sink)
+	core := newZapCore(level, sink, false)
 
 	return zap.New(core, options...).Sugar()
 }
 
-func newZapCore(level zapcore.LevelEnabler, sink io.Writer) zapcore.Core {
-	return zapcore.NewCore(
-		zapcore.NewJSONEncoder(zapcore.EncoderConfig{
-			TimeKey:        "ts",
-			LevelKey:       "level",
-			NameKey:        "logger",
-			CallerKey:      "caller",
-			MessageKey:     "message",
-			StacktraceKey:  "stacktrace",
-			LineEnding:     zapcore.DefaultLineEnding,
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeTime:     zapcore.ISO8601TimeEncoder,
-			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-		}),
+func newZapCore(level zapcore.LevelEnabler, sink io.Writer, isStructure bool) zapcore.Core {
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "ts",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	var encoder zapcore.Encoder
+	if isStructure {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	} else {
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	}
+
+	return zapcore.NewCore(encoder,
 		zapcore.AddSync(sink),
 		level,
 	)
@@ -73,50 +81,7 @@ func Level() zapcore.Level {
 	return defaultLevel.Level()
 }
 
-func Debug(args ...interface{}) {
-	global.Debug(args...)
-}
-
-func Debugf(format string, args ...interface{}) {
-	global.Debugf(format, args...)
-}
-
-func Info(args ...interface{}) {
-	global.Info(args...)
-}
-
-func Infof(format string, args ...interface{}) {
-	global.Infof(format, args...)
-}
-
-func Warn(args ...interface{}) {
-	global.Warn(args...)
-}
-
-func Warnf(format string, args ...interface{}) {
-	global.Warnf(format, args...)
-}
-
-func Error(args ...interface{}) {
-	global.Error(args...)
-}
-
-func Errorf(format string, args ...interface{}) {
-	global.Errorf(format, args...)
-}
-
-func Fatal(args ...interface{}) {
-	global.Fatal(args...)
-}
-
-func Fatalf(format string, args ...interface{}) {
-	global.Fatalf(format, args...)
-}
-
-func Panic(args ...interface{}) {
-	global.Panic(args...)
-}
-
-func Panicf(format string, args ...interface{}) {
-	global.Panicf(format, args...)
+// Logger возвращает глобальный логгер.
+func Logger() *zap.SugaredLogger {
+	return global
 }

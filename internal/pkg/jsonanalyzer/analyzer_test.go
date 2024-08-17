@@ -18,10 +18,10 @@ func TestAnalyzer(t *testing.T) {
 		t.Fail()
 	}
 	if res != "1\n" {
-		logger.Errorf("res: %v", res)
+		logger.Errorf(ctx, "res: %v", res)
 		t.Fail()
 	} else {
-		logger.Info(res)
+		logger.Info(ctx, res)
 	}
 
 }
